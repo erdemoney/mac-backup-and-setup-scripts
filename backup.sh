@@ -43,7 +43,8 @@ backup_brew () {
 
 backup_pip () {
 	if ! test -f "$pip_requirements_cfg"; then
-		echo -n "[application]\nname = pip requirements.txt\n\n[configuration_files]\n$pip_requirements" > "$pip_requirements_cfg"
+		pip_path="${pip_requirements/"$HOME\/"/""}"   
+		echo -n "[application]\nname = pip requirements.txt\n\n[configuration_files]\n$pip_path" > "$pip_requirements_cfg"
 	fi
 
 	if test -f "$pip_requirements"; then
