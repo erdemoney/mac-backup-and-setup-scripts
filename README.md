@@ -8,3 +8,7 @@ After runnning the "backup" script, simply run the "restore" script on a new ins
 - Backup and restore your python packages via pip freeze
 - Set up your Github ssh keys via github CLI
 - Run Mac 'defaults' commands to restore Mac configuration options not restored via icloud or other mechanisms
+
+
+TODO:
+- Add option to backup EFI folder for hackintosh users
