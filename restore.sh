@@ -14,8 +14,8 @@ storage_service="icloud"
 mackup_dir="${HOME}/Library/Mobile Documents/com~apple~CloudDocs/Mackup"
 mackup_cfg="${mackup_dir}/.mackup.cfg"
 
-# This is the location of the symlinked files that Mackup creates
-# These files will not exist on a new system until '$ Mackup backup' is run
+# This is the location of the symlinked files that Mackup creates based on
+# their original location when '$ mackup backup' is run.
 brewfile="${HOME}/.Brewfile"
 pip_requirements="${HOME}/.requirements.txt"
 defaults="{$HOME}/.defaults"
@@ -28,11 +28,23 @@ manual_actions=(
 	"Setup monitors"
 )
 
-# post install commands
-post_install () {
+# Any custom stuff can go here
+run_custom () {
+	# https://www.lunarvim.org/
+	install_lunarvim () {
+		echo "Installing LunarVim"
+		if ! command -v -- "lvim" > /dev/null 2>&1; then
+			brew install git make node npm rust # install deps
+			bash <(curl -s https://raw.githubusercontent.com/lunarvim/lunarvim/master/utils/installer/install.sh)
+		else
+			echo "LunarVim is already installed"
+		fi
+	}
+	install_lunarvim
 	brew cleanup
 	brew analytics off
 }
+
 
 ###############################################################################
 
@@ -111,7 +123,7 @@ restore_from_mackup () {
 				select option in "Create default config" "Select .mackup.cfg from files" "Skip Mackup"; do
 					case $option in
 						"Create default config" ) create_default_config; break;;
-						"Select .mackup.cfg from files" ) mackup_cfg=select_from_finder; break;;
+						"Select .mackup.cfg from files" ) cp $(select_from_finder) "${mackup_cfg}"; break;;
 						"Skip Mackup" ) break;;
 					esac
 				done
@@ -218,7 +230,7 @@ while true; do
 	esac
 done
 
-echo "Run post install actions? (Y/n)"
+echo "Run custom actions? (Y/n)"
 while true; do
 	read yn
 	case $yn in
