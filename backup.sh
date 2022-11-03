@@ -5,12 +5,6 @@
 ################################################################################
 
 # These paths will be used for storing/symlinking your files for mackup
-# NOTE: If you change these, you will have to change their locations in 
-# 	the restore script for it to find them. Additionally if you change them
-# 	after already running the script and generating the config files for
-# 	mackup i.e .mackup/brewfile.cfg you will have to manually change the
-# 	paths in the .cfg files to your new location for it to backup properly
-
 defaults="${HOME}/.defaults"
 brewfile="${HOME}/.Brewfile"
 pip_requirements="${HOME}/.requirements.txt"
@@ -21,7 +15,6 @@ if ! command -v -- "mackup" > /dev/null 2>&1; then
 	echo "Mackup not found. Please install Mackup to use this script"
 	exit 1
 fi
-
 
 run_mackup () {
 	select_from_finder () {
@@ -50,7 +43,7 @@ run_mackup () {
 				select option in "Create default config" "Select .mackup.cfg from files" "Skip Mackup"; do
 					case $option in
 						"Create default config" ) create_default_config; break;;
-                                                "Select .mackup.cfg from files" ) cp $(select_from_finder) "${mackup_cfg}"; break;;
+						"Select .mackup.cfg from files" ) cp "$(select_from_finder)" "${mackup_cfg}"; break;;
 						"Skip Mackup" ) break;;
 					esac
 				done
@@ -62,9 +55,14 @@ run_mackup () {
 
 backup_brew () {
 	brewfile_cfg="${HOME}/.mackup/brewfile.cfg"
-	cfg_brewfile_path="${brewfile/"$HOME\/"/""}"   
-	cfg_file_contents="[application]\nname = Brewfile\n\n[configuration_files]\n$cfg_brewfile_path"
+	cfg_brewfile_path="${brewfile/"$HOME\/"/""}" # string formatted for mackups config files  
+	cfg_file_contents="[application]
+	name = Brewfile
 
+	[configuration_files]
+	$cfg_brewfile_path"
+
+	# create custom configuration file for backing up brew packages
 	create_config () {
 		# create mackup directory if one doesnt exist
 		if ! [ -d "${HOME}/.mackup" ]; then
@@ -73,22 +71,15 @@ backup_brew () {
 		echo -n "$cfg_file_contents" > "$brewfile_cfg"
 	}
 
-	# create custom configuration file for backing up brew packages
-	if ! test -f "$brewfile_cfg"; then
-		create_config ()
+	if ! test -f "$brewfile_cfg" ; then
+		echo "mackup brewfile config created"
+		create_config
 	fi
 
-	if [ "$cfg_file_contents" != "$(cat "$brewfile_cfg")" ]; then
-		echo "no match"
-		echo -n "[application]\nname = Brewfile\n\n[configuration_files]\n$brew_path"
-		echo 
-		echo "$(cat "$brewfile_cfg")"
-	else
-		echo -n "[application]\nname = Brewfile\n\n[configuration_files]\n$brew_path"
-		echo 
-		echo "$(cat "$brewfile_cfg")"
+	if [[ "$(< "$brewfile_cfg")" != "$cfg_file_contents" ]]; then
+		echo "mackup brewfile config updated"
+		create_config
 	fi
-	exit
 
 	# backup brew packages
 	if test -f "$brewfile"; then
@@ -110,20 +101,32 @@ backup_brew () {
 	fi
 }
 
-backup_brew
-exit
-
 backup_pip () {
 	pip_requirements_cfg="${HOME}/.mackup/pip_requirements.cfg"
+	cfg_requirements_path="${pip_requirements/"$HOME\/"/""}" # string formatted for mackups config files
+	cfg_file_contents="[application]
+	name = pip requirements.txt
+
+	[configuration_files]
+	$cfg_requirements_path"
 
 	# create custom configuration file for backing up pip packages
-	if ! test -f "$pip_requirements_cfg"; then
+	create_config () {
 		# create mackup directory if one doesnt exist
 		if ! [ -d "${HOME}/.mackup" ]; then
 			mkdir "${HOME}/.mackup"
 		fi
-		pip_path="${pip_requirements/"$HOME\/"/""}"   
-		echo -n "[application]\nname = pip requirements.txt\n\n[configuration_files]\n$pip_path" > "$pip_requirements_cfg"
+		echo -n "$cfg_file_contents" > "$pip_requirements_cfg"
+	}
+
+	if ! test -f "$pip_requirements_cfg" ; then
+		echo "Mackup pip requirements.txt config created"
+		create_config
+	fi
+
+	if [[ "$(< "$pip_requirements_cfg")" != "$cfg_file_contents" ]]; then
+		echo "mackup brewfile config updated"
+		create_config
 	fi
 
 	# backup pip packages
@@ -144,12 +147,37 @@ backup_pip () {
 
 backup_defaults () {
 	defaults_cfg="${HOME}/.mackup/defaults.cfg"
+	cfg_defaults_path="${defaults/"$HOME\/"/""}" # string formatted for mackups config files
+	cfg_file_contents="[application]
+	name = macOS defaults
+	
+	[configuration_files]
+	$cfg_defaults_path"
+
+	create_config () {
+		# create mackup directory if one doesnt exist
+		if ! [ -d "${HOME}/.mackup" ]; then
+			mkdir "${HOME}/.mackup"
+		fi
+		echo -n "$cfg_file_contents" > "$defaults_cfg"
+	}
+
+	if ! test -f "$pip_requirements_cfg" ; then
+		echo "Mackup pip requirements.txt config created"
+		create_config
+	fi
+
+	if [[ "$(< "$pip_requirements_cfg")" != "$cfg_file_contents" ]]; then
+		echo "mackup brewfile config updated"
+		create_config
+	fi
+
 	if ! test -f "$defaults_cfg"; then
 		# create mackup directory if one doesnt exist
 		if ! [ -d "${HOME}/.mackup" ]; then
 			mkdir "${HOME}/.mackup"
 		fi
-		echo "[application]\nname = macOS defaults\n\n[configuration_files]\n$defaults"> "$defaults_cfg"
+		echo "$cfg_file_contents" > "$defaults_cfg"
 	fi
 }
 
@@ -193,5 +221,4 @@ if test -f "$defaults"; then
 	done
 fi
 
-
-
+run_mackup
